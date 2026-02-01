@@ -1,7 +1,7 @@
 # =============================
-# Student Names:
-# Group ID:
-# Date:
+# Student Names: Remy Yoo, Daniel Wan, Kosi Amobi-Oleka
+# Group ID: 30
+# Date: 1/2/2026
 # =============================
 # CISC 352
 # propagators.py
@@ -103,17 +103,17 @@ def prop_FC(csp, newVar=None):
     #IMPLEMENT
     vals = []
     if newVar is None:
-        constraints = csp.get_all_cons()
-    else:
-        constraints = csp.get_cons_with_var(newVar)
+        constraints = csp.get_all_cons() #get all constraints
+    else: 
+        constraints = csp.get_cons_with_var(newVar) #check all picked constraints 
     
     for c in constraints:
-        if c.get_n_unasgn() == 1:
-            n = c.get_unasgn_vars()[0]
-            for val in list(n.cur_domain()):
-                if n.in_cur_domain(val) and not c.check_var_val(n, val):
-                    n.prune_value(val)
-                    vals.append((n, val))
+        if c.get_n_unasgn() == 1: #only one unassigned variable in the scope 
+            n = c.get_unasgn_vars()[0] #retrieve that variable
+            for val in list(n.cur_domain()): #iterate through current domain values
+                if not c.check_var_val(n, val): #check if constraint is satisfied 
+                    n.prune_value(val) #prune value if not satisfied
+                    vals.append((n, val)) 
                     
             if n.cur_domain_size() == 0:
                 return False, vals
@@ -130,16 +130,16 @@ def prop_GAC(csp, newVar=None):
     if newVar is None:
         queue = csp.get_all_cons()
     else:
-        queue = csp.get_cons_with_var(newVar)
-    while len(queue) > 0:
-        n1 = queue.pop(0)
-        c_inc = n1.get_scope()
+        queue = csp.get_cons_with_var(newVar) 
+    while len(queue) > 0: #while queue is not empty
+        n1 = queue.pop(0) #pop the first constraint
+        c_inc = n1.get_scope() #get the scope of the constraint
         for v in c_inc:
-            for val in v.cur_domain():
-                if v.in_cur_domain(val) and not n1.check_var_val(v, val):
-                    v.prune_value(val)
+            for val in v.cur_domain(): 
+                if not n1.check_var_val(v, val): #if value has no supporting assignment
+                    v.prune_value(val) 
                     vals.append((v, val))
-                    if v.cur_domain_size() == 0:
+                    if v.cur_domain_size() == 0: #dead end 
                         return False, vals
                     for n2 in csp.get_cons_with_var(v):
                         if n2 not in queue:
