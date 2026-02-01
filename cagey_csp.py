@@ -85,10 +85,43 @@ An example of a 3x3 puzzle would be defined as:
 '''
 
 from cspbase import *
+import itertools
 
 def binary_ne_grid(cagey_grid):
     ##IMPLEMENT
-    pass
+    domain = []
+    for i in range(1, cagey_grid[0] + 1):
+        domain.append(i)
+    var_array = []
+    for r in range(cagey_grid[0]):
+        var_array.append([])
+        for c in range(cagey_grid[0]):
+            var_array[r].append(Variable(f"Cell{r+1}{c+1}", domain))
+            
+    sat_tuples = []
+    for pair in itertools.product(domain, domain):
+        if pair[0] != pair[1]:
+            sat_tuples.append(pair)
+    var_lst = []
+    for row in range(cagey_grid[0]):
+        for col in range(cagey_grid[0]):
+            var_lst.append(var_array[row][col])
+    csp = CSP("Cagey", var_lst)
+    
+    for row in range(cagey_grid[0]):
+        for col1 in range(cagey_grid[0]):
+            for col2 in range(col1 + 1, cagey_grid[0]):
+                con = Constraint(f"Row{row+1}", [var_array[row][col1], var_array[row][col2]])
+                con.add_satisfying_tuples(sat_tuples)
+                csp.add_constraint(con)
+    for col in range(cagey_grid[0]):
+        for row1 in range(cagey_grid[0]):
+            for row2 in range(row1 + 1, cagey_grid[0]):
+                con = Constraint(f"Col{col+1}", [var_array[row1][col], var_array[row2][col]])
+                con.add_satisfying_tuples(sat_tuples)
+                csp.add_constraint(con)
+                
+    return csp, var_lst
 
 
 def nary_ad_grid(cagey_grid):
