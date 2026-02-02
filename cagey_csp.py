@@ -86,6 +86,8 @@ An example of a 3x3 puzzle would be defined as:
 
 from cspbase import *
 import itertools
+import operator
+from functools import reduce
 
 def binary_ne_grid(cagey_grid):
     ##IMPLEMENT
@@ -168,4 +170,72 @@ def nary_ad_grid(cagey_grid):
 
 def cagey_csp_model(cagey_grid):
     ##IMPLEMENT
-    pass
+    csp, vars = nary_ad_grid(cagey_grid)
+    n, cages = cagey_grid
+    
+    for cage in cages:
+        target, cells, op = cage
+        
+        cage_vars = []
+        for r, c in cells:
+            idx = (r - 1) * n + (c - 1)
+            cage_vars.append(vars[idx])
+            
+        con_vars = list(cage_vars)
+        var_repr_str = str(cage_vars)
+        
+        op_var_name = f"Cage_op({target}:{op}:{var_repr_str})"
+        op_var = Variable(op_var_name, ['+', '-', '*', '/', '%'])
+        csp.add_var(op_var)
+        vars.append(op_var)
+        con_vars.append(op_var)
+        
+        
+        con_name = f"Cage_{target}_{cells}"
+        con = Constraint(con_name, con_vars)
+        
+        cell_domains = [range(1, n + 1) for _ in cage_vars]
+        sat_tuples = []
+        
+        for t in itertools.product(*cell_domains):
+            op_candidates = []
+            if op == '?':
+                op_candidates = ['+', '-', '*', '/', '%']
+            else:
+                op_candidates = [op]
+            for op_choice in op_candidates:
+                if check_op_valid(t, op_choice, target):
+                    sat_tuples.append(t + (op_choice,))
+        con = Constraint(con_name, con_vars)
+        con.add_satisfying_tuples(sat_tuples)
+        csp.add_constraint(con)
+    return csp, vars
+                        
+def check_op_valid(cell_vals, op_choice, v):
+    if op_choice == '+':
+        return sum(cell_vals) == v
+    elif op_choice == '-':
+        for p in itertools.permutations(cell_vals):
+            if reduce(operator.sub, p) == v:
+                return True
+        return False
+    elif op_choice == '*':
+        p = 1
+        for x in cell_vals: p *= x
+        return p == v
+    elif op_choice == '/':
+        for p in itertools.permutations(cell_vals):
+            res = p[0]
+            for x in p[1:]:
+                res /= x
+            if res == v:
+                return True
+        return False
+    elif op_choice == '%':
+        for p in itertools.permutations(cell_vals):
+            modulus = p[0]
+            sum_nums = sum(p[1:])
+            if sum_nums % modulus == v:
+                return True
+        return False
+    return False
